@@ -1,0 +1,153 @@
+dataset:
+  repo_id: "ai4bharat/Pralekha"
+  subsets:
+    - name: "alignable"
+      splits: ["train", "dev", "test"]
+    - name: "unalignable"
+      splits: ["ben", "eng", "guj", "hin", "kan", "mal", "mar", "ori", "pan", "tam", "tel", "urd"]
+  cache_dir: "./cache/datasets"
+  streaming: true
+  max_samples_per_lang: 50000   # for training; null = all
+  min_text_length: 50
+  max_text_length: 2000
+
+languages:
+  - code: "ben"
+    name: "Bengali"
+    script: "Bengali"
+    unicode_range: [0x0980, 0x09FF]
+    iso639: "bn"
+  - code: "eng"
+    name: "English"
+    script: "Latin"
+    unicode_range: [0x0000, 0x007F]
+    iso639: "en"
+  - code: "guj"
+    name: "Gujarati"
+    script: "Gujarati"
+    unicode_range: [0x0A80, 0x0AFF]
+    iso639: "gu"
+  - code: "hin"
+    name: "Hindi"
+    script: "Devanagari"
+    unicode_range: [0x0900, 0x097F]
+    iso639: "hi"
+  - code: "kan"
+    name: "Kannada"
+    script: "Kannada"
+    unicode_range: [0x0C80, 0x0CFF]
+    iso639: "kn"
+  - code: "mal"
+    name: "Malayalam"
+    script: "Malayalam"
+    unicode_range: [0x0D00, 0x0D7F]
+    iso639: "ml"
+  - code: "mar"
+    name: "Marathi"
+    script: "Devanagari"
+    unicode_range: [0x0900, 0x097F]
+    iso639: "mr"
+  - code: "ori"
+    name: "Odia"
+    script: "Odia"
+    unicode_range: [0x0B00, 0x0B7F]
+    iso639: "or"
+  - code: "pan"
+    name: "Punjabi"
+    script: "Gurmukhi"
+    unicode_range: [0x0A00, 0x0A7F]
+    iso639: "pa"
+  - code: "tam"
+    name: "Tamil"
+    script: "Tamil"
+    unicode_range: [0x0B80, 0x0BFF]
+    iso639: "ta"
+  - code: "tel"
+    name: "Telugu"
+    script: "Telugu"
+    unicode_range: [0x0C00, 0x0C7F]
+    iso639: "te"
+  - code: "urd"
+    name: "Urdu"
+    script: "Arabic"
+    unicode_range: [0x0600, 0x06FF]
+    iso639: "ur"
+
+models:
+  ngram:
+    name: "CharNgramLID"
+    n_range: [2, 3, 4]
+    max_features: 150000
+    classifier: "LogisticRegression"
+    C: 5.0
+    max_iter: 1000
+    enabled: true
+
+  fasttext:
+    name: "FastTextLID"
+    pretrained_model: "lid.176.ftz"   # will be downloaded if not present
+    dim: 100
+    epoch: 25
+    lr: 0.1
+    wordNgrams: 3
+    minCount: 5
+    enabled: true
+
+  transformer:
+    name: "TransformerLID"
+    base_model: "google/muril-base-cased"
+    max_length: 128
+    batch_size: 32
+    learning_rate: 2e-5
+    num_epochs: 3
+    warmup_ratio: 0.1
+    weight_decay: 0.01
+    fp16: true
+    enabled: false     # heavy; set true if GPU available
+
+  ensemble:
+    strategy: "weighted_vote"   # weighted_vote | stacking | soft_vote
+    weights:
+      ngram: 0.30
+      fasttext: 0.45
+      transformer: 0.25
+    calibration: "isotonic"     # isotonic | platt | none
+
+script_analysis:
+  detect_mixed_scripts: true
+  compute_unicode_stats: true
+  directionality_analysis: true
+  transliteration_detection: true
+  romanization_detection: true
+  noise_detection: true
+
+training:
+  output_dir: "./artifacts/models"
+  seed: 42
+  test_size: 0.1
+  val_size: 0.05
+  n_jobs: -1
+  verbose: true
+
+evaluation:
+  metrics: ["accuracy", "f1_macro", "f1_weighted", "precision", "recall"]
+  confusion_matrix: true
+  confidence_histogram: true
+  per_language_report: true
+  error_analysis: true
+  output_dir: "./artifacts/eval"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  reload: false
+  log_level: "info"
+  max_text_length: 10000
+  rate_limit: 100    # requests/minute
+
+logging:
+  level: "INFO"
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}"
+  file: "./logs/pipeline.log"
+  rotation: "10 MB"
