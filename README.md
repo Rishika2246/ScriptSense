@@ -1,4 +1,4 @@
-# 🔤 Language Identification & Script Analysis System
+#  Language Identification & Script Analysis System
 ### Powered by AI4Bharat/Pralekha Dataset
 
 An advanced NLP pipeline for **language identification**, **script recognition**, and **linguistic analysis** across 12 Indic languages + English using the [Pralekha dataset](https://huggingface.co/datasets/ai4bharat/Pralekha).
